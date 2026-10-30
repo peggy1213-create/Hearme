@@ -1,0 +1,64 @@
+/* "Quiet Signal" palette — see docs/design/palette.md. */
+:root {
+  --primary: #2e44c4;
+  --listening: #c2412d;
+  --highlight: #ffe7a3;
+  --canvas: #f6f6f3;
+  --surface: #ffffff;
+  --line: #e2e3df;
+  --muted: #5b6270;
+  --ink: #15181e;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #8e9cff;
+    --listening: #ff8a70;
+    --highlight: #4a3f17;
+    --canvas: #111318;
+    --surface: #1a1d24;
+    --line: #2c303a;
+    --muted: #9aa1ae;
+    --ink: #ecedf0;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Figtree,
+    'Noto Sans TC',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.app__title {
+  color: var(--primary);
+  margin: 0 0 8px;
+}
+
+.app__tagline {
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.app__meta {
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.85rem;
+}

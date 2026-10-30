@@ -1,0 +1,24 @@
+[package]
+name = "hearme"
+version = "0.0.0"
+description = "Hearme desktop app"
+authors = ["Hearme"]
+edition = "2021"
+rust-version = "1.77"
+
+# The library the mobile entry point and the binary both call into.
+[lib]
+name = "hearme_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Enabled when building bundled production apps.
+custom-protocol = ["tauri/custom-protocol"]

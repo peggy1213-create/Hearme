@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # TypeScript workspace: lint, type-check and test on both OSes.
+  node:
+    name: Node (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Test
+        run: pnpm test
+
+  # macOS native capture helper (Swift).
+  macos-capture:
+    name: Swift (macos-capture)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        working-directory: native/macos-capture
+        run: swift build
+      - name: Test
+        working-directory: native/macos-capture
+        run: swift test
+
+  # Windows native capture helper (Rust).
+  windows-capture:
+    name: Rust (windows-capture)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format check
+        working-directory: native/windows-capture
+        run: cargo fmt --check
+      - name: Clippy
+        working-directory: native/windows-capture
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Test
+        working-directory: native/windows-capture
+        run: cargo test
+
+  # Tauri Rust core — compile check only (no bundling in CI).
+  # The frontend must be built first: tauri::generate_context! embeds the dist/
+  # output named by frontendDist in tauri.conf.json.
+  desktop-core:
+    name: Rust (desktop core, ${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter @hearme/desktop... build
+
+      - name: Cargo check
+        working-directory: apps/desktop/src-tauri
+        run: cargo check

@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+.turbo/
+
+# Rust / Cargo
+target/
+**/target/
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+
+# Tauri bundles
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# Environment and secrets — never commit real keys
+.env
+.env.*
+!.env.example
+
+# Local meeting content — NEVER commit recordings, transcripts or summaries
+Hearme Meetings/
+**/Hearme Meetings/
+*.ogg
+*.wav
+*.mp3
+meeting-fixtures/
+benchmark-audio/
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Docker volumes
+pgdata/

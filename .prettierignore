@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+out/
+.turbo/
+target/
+**/target/
+.build/
+coverage/
+pnpm-lock.yaml
+apps/desktop/src-tauri/gen/
+
+# Hand-authored docs — kept as written, not reflowed by Prettier.
+README.md
+docs/plan.md
+docs/prompts/
+docs/design/

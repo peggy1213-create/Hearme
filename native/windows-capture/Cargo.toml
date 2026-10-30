@@ -1,0 +1,15 @@
+[package]
+name = "hearme-windows-capture"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.77"
+description = "Hearme Windows audio capture helper (WASAPI process loopback)"
+publish = false
+
+[[bin]]
+name = "hearme-windows-capture"
+path = "src/main.rs"
+
+[lib]
+name = "hearme_windows_capture"
+path = "src/lib.rs"

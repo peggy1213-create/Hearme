@@ -1,0 +1,26 @@
+# Local development infrastructure for Hearme.
+#
+# PostgreSQL stores ONLY accounts and usage counts. It never stores meeting
+# content: no recordings, transcripts or summaries. See CLAUDE.md.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: hearme-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hearme
+      POSTGRES_PASSWORD: hearme
+      POSTGRES_DB: hearme
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hearme -d hearme']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
