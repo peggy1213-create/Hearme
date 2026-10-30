@@ -16,6 +16,12 @@ export interface SttStreamOptions {
   sampleRate: number;
   /** Optional custom vocabulary (names, products, jargon). */
   vocabulary?: string[];
+  /**
+   * Convert Chinese to Traditional (Taiwan) before emitting. Defaults to `true`
+   * (the production path). The benchmark sets this `false` so it can inspect the
+   * vendor's raw output for Simplified characters before converting itself.
+   */
+  normalizeChinese?: boolean;
 }
 
 export interface SttBatchOptions {
@@ -24,6 +30,8 @@ export interface SttBatchOptions {
   /** Path to an audio file on disk (the final-pass recording). */
   audioPath: string;
   vocabulary?: string[];
+  /** See {@link SttStreamOptions.normalizeChinese}. Defaults to `true`. */
+  normalizeChinese?: boolean;
 }
 
 export interface SttStreamHandlers {

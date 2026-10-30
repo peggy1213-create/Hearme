@@ -34,8 +34,15 @@ Hearme Meetings/
 *.ogg
 *.wav
 *.mp3
+*.m4a
+*.flac
+*.opus
+*.webm
 meeting-fixtures/
 benchmark-audio/
+# STT benchmark corpus (real meeting audio + reference transcripts) and its reports
+benchmark-data/
+reports/
 
 # Editor / OS
 .vscode/*
