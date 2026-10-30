@@ -1,4 +1,4 @@
-import { toTaiwan } from '@hearme/zhtw';
+import { toTaiwanTraditional, tokenizeMixed } from '@hearme/zhtw';
 
 /**
  * Accuracy metrics for the Phase 0 STT benchmark.
@@ -6,10 +6,16 @@ import { toTaiwan } from '@hearme/zhtw';
  * - CER (character error rate) for Chinese: Chinese has no spaces, so we score per
  *   character.
  * - WER (word error rate) for English: scored per whitespace-delimited word.
+ * - Mixed error rate: over `tokenizeMixed` tokens (Han chars + English words), so
+ *   code-switched speech is scored as one sequence.
  *
- * Both are edit distance (insertions + deletions + substitutions) over the
- * reference length. See docs/plan.md.
+ * All are edit distance (insertions + deletions + substitutions) over the
+ * reference length. Chinese is converted to Traditional (Taiwan) on both sides
+ * first, so Simplified vs Traditional is never counted as an error. See
+ * docs/plan.md.
  */
+
+const HAN = /\p{Script=Han}/u;
 
 export interface ErrorRate {
   /** errors / reference length, in [0, ∞). 0 is perfect. */
@@ -94,5 +100,52 @@ export function wer(reference: string, hypothesis: string): ErrorRate {
  * (Taiwan) first, so Simplified vs Traditional is never counted as an error.
  */
 export function cer(reference: string, hypothesis: string): ErrorRate {
-  return editOps(charTokens(toTaiwan(reference)), charTokens(toTaiwan(hypothesis)));
+  return editOps(
+    charTokens(toTaiwanTraditional(reference)),
+    charTokens(toTaiwanTraditional(hypothesis)),
+  );
+}
+
+/**
+ * Mixed error rate over `tokenizeMixed` tokens (one token per Han character, one
+ * per English word). This is the headline metric for code-switched zh-TW/English
+ * speech. Both sides are converted to Traditional (Taiwan) first.
+ */
+export function mixedErrorRate(reference: string, hypothesis: string): ErrorRate {
+  return editOps(
+    tokenizeMixed(toTaiwanTraditional(reference)),
+    tokenizeMixed(toTaiwanTraditional(hypothesis)),
+  );
+}
+
+/** Keep only the Han-character tokens from a mixed string (after conversion). */
+function chineseChars(text: string): string[] {
+  return tokenizeMixed(toTaiwanTraditional(text)).filter((t) => HAN.test(t));
+}
+
+/** Keep only the non-Han (English/number) word tokens from a mixed string. */
+function englishWords(text: string): string[] {
+  return tokenizeMixed(text).filter((t) => !HAN.test(t));
+}
+
+/** CER over the Chinese (Han) characters only, ignoring the English parts. */
+export function cerChineseOnly(reference: string, hypothesis: string): ErrorRate {
+  return editOps(chineseChars(reference), chineseChars(hypothesis));
+}
+
+/** WER over the English words only, ignoring the Chinese parts. */
+export function werEnglishOnly(reference: string, hypothesis: string): ErrorRate {
+  return editOps(englishWords(reference), englishWords(hypothesis));
+}
+
+/**
+ * The p-th percentile (0–100) of a set of numbers, using nearest-rank. Returns 0
+ * for an empty set. Used for streaming latency p50/p95.
+ */
+export function percentile(values: readonly number[], p: number): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const rank = Math.ceil((p / 100) * sorted.length);
+  const idx = Math.min(sorted.length - 1, Math.max(0, rank - 1));
+  return sorted[idx]!;
 }

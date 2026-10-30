@@ -14,7 +14,10 @@
     "start": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@hearme/zhtw": "workspace:*"
+    "@hearme/shared": "workspace:*",
+    "@hearme/stt": "workspace:*",
+    "@hearme/zhtw": "workspace:*",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
