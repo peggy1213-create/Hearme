@@ -2,16 +2,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "macos-capture",
+    name: "tapcapture",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "macos-capture",
-            path: "Sources/macos-capture"
+            name: "tapcapture",
+            path: "Sources/macos-capture",
+            resources: [
+                .process("known-apps.json"),
+            ]
         ),
         .testTarget(
-            name: "macos-captureTests",
-            dependencies: ["macos-capture"],
+            name: "tapcaptureTests",
+            dependencies: ["tapcapture"],
             path: "Tests/macos-captureTests"
         ),
     ]

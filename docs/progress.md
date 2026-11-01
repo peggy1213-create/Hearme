@@ -3,6 +3,40 @@
 A short log of what each working session changed. Newest first. Keep this updated at
 the end of each session (see CLAUDE.md).
 
+## 2026-11-01 — Prompt 2: macOS capture helper (`tapcapture`)
+
+Built the macOS audio capture sidecar in `native/macos-capture`, turning the Prompt 0
+stub into a working helper. **Authored on Windows against Apple's current Core Audio
+taps docs — not yet compiled or run on a Mac**; expect a small fixup pass against the
+real SDK.
+
+- **Interface:** `packages/shared/CAPTURE_HELPER.md` — the shared helper protocol both
+  OS helpers speak: JSON commands on stdin (`list_sources`, `start`, `stop`, `ping`),
+  length-prefixed binary frames on stdout (19-byte header: type/track/hostTimeNs/
+  sampleRate/channels/frameCount), event payloads, and the one shared host clock. This
+  is the contract Prompt 3 (Windows) must match.
+- **Helper (`tapcapture`):** renamed the SwiftPM target from `macos-capture`. Frame
+  codec + shared `mach_absolute_time` clock; HAL process enumeration; `known-apps.json`
+  (Zoom, Teams, Webex, and Chrome/Edge/Safari/Arc for Meet) matched by bundle-ID prefix
+  so browser helper/renderer processes are tapped too; meeting track via
+  `CATapDescription(monoMixdownOfProcesses:)` in a **private, unmuted** aggregate
+  device; mic track via `AVAudioEngine`; `source_started/stopped` monitoring; device
+  change + sleep/wake handling; all-zero **silence guard** →
+  `permission_suspected_missing`; signal-handler teardown + orphan-device reaping; and
+  the `record --bundle --seconds --out` debug subcommand (writes `mic.wav`/`meeting.wav`).
+- **Tests:** frame round-trip, config matching, silence guard, protocol parsing (all
+  headless), plus an opt-in `afplay` tone-capture integration test
+  (`HEARME_RUN_AUDIO_TESTS=1`, needs a Mac with audio permission).
+- **Docs:** `native/macos-capture/README.md` (build/run + the sidecar permission trap),
+  ADR `0003-macos-audio-capture.md`.
+
+**Next (needs you, on a Mac):** `swift build && swift test`; fix any real-SDK
+mismatches (Core Audio aggregate-device key constants, `AVAudioEngine` device
+selection, IO-proc buffer handling are the likely spots); verify `known-apps.json`
+bundle IDs and that the tap permission is attributed to the host app when `tapcapture`
+runs as a Tauri sidecar; then the Prompt 2 acceptance checks (real Zoom/Meet call,
+unplug headphones mid-recording, no leftover aggregate devices).
+
 ## 2026-10-30 — Prompt 1: STT benchmark (Phase 0)
 
 Built the tooling to pick the STT vendor on real zh-TW/English audio. Not yet run —

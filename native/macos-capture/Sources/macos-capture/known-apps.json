@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "zoom",
+      "name": "Zoom",
+      "kind": "app",
+      "bundleIds": ["us.zoom.xos", "us.zoom."]
+    },
+    {
+      "id": "teams",
+      "name": "Microsoft Teams",
+      "kind": "app",
+      "bundleIds": ["com.microsoft.teams2", "com.microsoft.teams"]
+    },
+    {
+      "id": "webex",
+      "name": "Webex",
+      "kind": "app",
+      "bundleIds": ["Cisco-Systems.Spark", "com.cisco.webexmeetingsapp", "com.webex."]
+    },
+    {
+      "id": "meet-chrome",
+      "name": "Google Chrome",
+      "kind": "browser",
+      "bundleIds": ["com.google.Chrome"]
+    },
+    {
+      "id": "meet-edge",
+      "name": "Microsoft Edge",
+      "kind": "browser",
+      "bundleIds": ["com.microsoft.edgemac"]
+    },
+    {
+      "id": "meet-safari",
+      "name": "Safari",
+      "kind": "browser",
+      "bundleIds": ["com.apple.Safari"]
+    },
+    {
+      "id": "meet-arc",
+      "name": "Arc",
+      "kind": "browser",
+      "bundleIds": ["company.thebrowser.Browser"]
+    }
+  ]
+}
