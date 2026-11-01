@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "zoom",
+      "name": "Zoom",
+      "kind": "app",
+      "exeNames": ["Zoom.exe", "Zoom_launcher.exe"]
+    },
+    {
+      "id": "teams",
+      "name": "Microsoft Teams",
+      "kind": "app",
+      "exeNames": ["ms-teams.exe", "Teams.exe"]
+    },
+    {
+      "id": "webex",
+      "name": "Webex",
+      "kind": "app",
+      "exeNames": ["CiscoCollabHost.exe", "webexmta.exe", "atmgr.exe", "webex.exe"]
+    },
+    {
+      "id": "meet-chrome",
+      "name": "Google Chrome",
+      "kind": "browser",
+      "exeNames": ["chrome.exe"]
+    },
+    {
+      "id": "meet-edge",
+      "name": "Microsoft Edge",
+      "kind": "browser",
+      "exeNames": ["msedge.exe"]
+    },
+    {
+      "id": "meet-firefox",
+      "name": "Mozilla Firefox",
+      "kind": "browser",
+      "exeNames": ["firefox.exe"]
+    }
+  ]
+}

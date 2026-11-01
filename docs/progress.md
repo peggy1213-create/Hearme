@@ -3,6 +3,42 @@
 A short log of what each working session changed. Newest first. Keep this updated at
 the end of each session (see CLAUDE.md).
 
+## 2026-11-01 — Prompt 3: Windows capture helper (`tapcapture.exe`)
+
+Built the Windows audio capture sidecar in `native/windows-capture` (Rust, `windows`
+crate), the counterpart to the macOS helper, speaking the **same** protocol so the core
+treats both the same way. Verified on this Windows 11 machine: `cargo build`,
+`cargo test` (36 tests), `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check`
+all green; and in protocol mode `list_sources` correctly reported the real running apps
+(detected Teams + Edge) and `ping` round-tripped a valid event frame over stdout. The
+**audio capture** paths (process loopback + mic) compile and are wired per Microsoft's
+Application Loopback sample but are **not yet exercised against a real call** — see the
+README's Status section.
+
+- **ADR:** `docs/decisions/0004-windows-audio-capture.md` (accepted). WASAPI process
+  loopback via `ActivateAudioInterfaceAsync` +
+  `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK` +
+  `PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE`. Confirmed minimum build from
+  Microsoft's docs: **Windows 10 Build 20348**.
+- **Helper (`tapcapture.exe`):** renamed the Cargo bin from the Prompt 0 stub. Frame
+  codec ported byte-for-byte from the Swift helper (same test vectors); shared
+  `QueryPerformanceCounter` → ns clock; process detection via Toolhelp snapshot +
+  `IAudioSessionManager2` active sessions, with process-tree ancestry so browser
+  renderers and Teams' WebView2 children count toward "producing audio"; `known-apps.json`
+  by **exe name** (Zoom, new Teams `ms-teams.exe`, Webex, Chrome/Edge/Firefox for Meet).
+- **Capture:** meeting track = process loopback on the app's **root PID** (whole tree),
+  mixed to mono float32; mic track = shared-mode WASAPI on the default/selected input;
+  both event-driven on their own threads writing frames to a mutex-guarded stdout. One
+  serial control thread (stdin commands + 1 s source monitor + device-change callbacks)
+  mirrors the macOS control queue; re-targets the meeting app on restart; `device_changed`
+  - mic re-point on default-input change; all-zero **silence guard**; Windows mic-privacy
+    denial → new `mic_blocked` event; unsupported build → `fatal_unsupported` error.
+- **Debug:** `tapcapture.exe record --process <exe> [--seconds n] [--out dir]` writes
+  `meeting.wav` + `mic.wav` (16-bit PCM).
+- **Next (needs a real machine in a call):** run `record` against a live Teams/Meet call
+  for two clean aligned WAVs, and swap speakers→headset mid-call; fix up loopback buffer/
+  format negotiation and mic mix-format handling if needed.
+
 ## 2026-11-01 — Prompt 2: macOS capture helper (`tapcapture`)
 
 Built the macOS audio capture sidecar in `native/macos-capture`, turning the Prompt 0
