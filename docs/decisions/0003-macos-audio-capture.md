@@ -27,10 +27,10 @@ Two things about this API shape the design and carry risk:
 
 - **`tapcapture`**, a Swift CLI in `native/macos-capture`, is the helper. It only
   captures and reports audio; recording, encoding and streaming stay in the core.
-- **Meeting track:** a `CATapDescription(monoMixdownOfProcesses:)` over *every*
+- **Meeting track:** a `CATapDescription(monoMixdownOfProcesses:)` over _every_
   audio-producing process that belongs to the chosen app (main process **and** its
   audio helpers / browser renderers, matched by bundle-ID prefix), `muteBehavior =
-  .unmuted` so the user still hears the meeting, inside a **private** aggregate device
+.unmuted` so the user still hears the meeting, inside a **private** aggregate device
   (`kAudioAggregateDeviceIsPrivateKey`) so nothing appears in Audio MIDI Setup.
 - **Mic track:** `AVAudioEngine` input node, captured as a separate track.
 - **One shared clock:** both tracks stamp frames with `mach_absolute_time` → ns so the

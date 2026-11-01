@@ -30,12 +30,12 @@ line buffering.
 
 ## Commands (core → helper, stdin, JSON lines)
 
-| `cmd`          | Fields                      | Meaning                                                              |
-| -------------- | --------------------------- | ------------------------------------------------------------------- |
-| `list_sources` | —                           | Reply with one `sources` event listing detectable meeting apps.     |
-| `start`        | `sourceId`, `micDeviceId?`  | Begin capturing the meeting app `sourceId` plus the microphone.     |
-| `stop`         | —                           | Stop all capture and tear down taps/devices. Process keeps running. |
-| `ping`         | —                           | Reply with a `pong` event. Liveness check.                          |
+| `cmd`          | Fields                     | Meaning                                                             |
+| -------------- | -------------------------- | ------------------------------------------------------------------- |
+| `list_sources` | —                          | Reply with one `sources` event listing detectable meeting apps.     |
+| `start`        | `sourceId`, `micDeviceId?` | Begin capturing the meeting app `sourceId` plus the microphone.     |
+| `stop`         | —                          | Stop all capture and tear down taps/devices. Process keeps running. |
+| `ping`         | —                          | Reply with a `pong` event. Liveness check.                          |
 
 - `sourceId` — an id from a `sources` event (e.g. `"zoom"`, `"meet-chrome"`). The
   helper resolves it to the set of audio-producing processes for that app at `start`
@@ -89,17 +89,17 @@ Payload length is always `frameCount * channels * 4` bytes.
 
 UTF-8 JSON with an `"event"` field. `frameCount` is the JSON byte length.
 
-| `event`                       | Extra fields                             | Meaning                                                                              |
-| ----------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| `sources`                     | `sources: Source[]`                      | Reply to `list_sources`.                                                             |
-| `source_started`              | `sourceId`, `bundleId`, `name`           | A known meeting app began producing audio.                                           |
-| `source_stopped`              | `sourceId`, `bundleId`, `name`           | It stopped (quit, or went silent).                                                   |
-| `capture_started`             | `sourceId`, `sampleRate`, `channels`     | Capture is running after a `start`.                                                  |
-| `capture_stopped`             | `sourceId?`                              | Capture ended (after `stop`, or the source disappeared).                             |
-| `permission_suspected_missing`| `track`                                  | Several seconds of exact-zero audio while the source is known to be playing — likely a missing OS permission (see below). |
-| `device_changed`              | `kind: "output" \| "input"`              | The default output/input device changed; capture was re-pointed automatically.       |
-| `pong`                        | —                                        | Reply to `ping`.                                                                     |
-| `error`                       | `code`, `message`                        | Non-fatal unless `code` is `fatal_*`. `message` never contains audio/transcript text.|
+| `event`                        | Extra fields                         | Meaning                                                                                                                   |
+| ------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `sources`                      | `sources: Source[]`                  | Reply to `list_sources`.                                                                                                  |
+| `source_started`               | `sourceId`, `bundleId`, `name`       | A known meeting app began producing audio.                                                                                |
+| `source_stopped`               | `sourceId`, `bundleId`, `name`       | It stopped (quit, or went silent).                                                                                        |
+| `capture_started`              | `sourceId`, `sampleRate`, `channels` | Capture is running after a `start`.                                                                                       |
+| `capture_stopped`              | `sourceId?`                          | Capture ended (after `stop`, or the source disappeared).                                                                  |
+| `permission_suspected_missing` | `track`                              | Several seconds of exact-zero audio while the source is known to be playing — likely a missing OS permission (see below). |
+| `device_changed`               | `kind: "output" \| "input"`          | The default output/input device changed; capture was re-pointed automatically.                                            |
+| `pong`                         | —                                    | Reply to `ping`.                                                                                                          |
+| `error`                        | `code`, `message`                    | Non-fatal unless `code` is `fatal_*`. `message` never contains audio/transcript text.                                     |
 
 `Source` is `{ "sourceId": string, "name": string, "bundleId": string, "running": bool, "producingAudio": bool }`.
 
