@@ -1,3 +1,4 @@
+import CoreAudio
 import XCTest
 @testable import tapcapture
 
