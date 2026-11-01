@@ -6,10 +6,39 @@ rust-version = "1.77"
 description = "Hearme Windows audio capture helper (WASAPI process loopback)"
 publish = false
 
+# The helper binary is `tapcapture`, matching the macOS helper so the desktop core
+# treats both the same way (see packages/shared/CAPTURE_HELPER.md). The Cargo package
+# keeps its descriptive name.
 [[bin]]
-name = "hearme-windows-capture"
+name = "tapcapture"
 path = "src/main.rs"
 
 [lib]
 name = "hearme_windows_capture"
 path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Direct dependency so the crate root `windows_core` resolves for the paths the
+# `#[implement]` macro generates (the `windows` crate re-exports it as `windows::core`).
+windows-core = "0.58"
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "implement",
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_Media_KernelStreaming",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Threading",
+    "Win32_System_Performance",
+    "Win32_System_Variant",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Security",
+    "Win32_UI_Shell_PropertiesSystem",
+]
+
+[dev-dependencies]
