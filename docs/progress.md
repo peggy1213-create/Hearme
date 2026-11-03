@@ -3,6 +3,51 @@
 A short log of what each working session changed. Newest first. Keep this updated at
 the end of each session (see CLAUDE.md).
 
+## 2026-11-03 — Prompt 4: streaming gateway + live transcription
+
+Built the gateway that turns two audio tracks per meeting into live, labelled,
+Traditional-Chinese-safe transcript segments and streams them back, storing no
+meeting content. Verified locally with `pnpm build / typecheck / lint / format:check
+/ test` (all packages); the integration/load/privacy tests run on in-process PGlite +
+the mock STT vendor, so no Docker, network or vendor keys are needed.
+
+- **Protocol (`packages/shared`, v1 → v2):** `start` gained `vocabulary`; `codec`
+  now also accepts `pcm`; new `ack { track, lastSeq }` server message drives resume.
+  `PROTOCOL.md` updated with the resume handshake.
+- **STT (`packages/stt`):** `MockAdapter` (deterministic, scripted, with a
+  Simplified-source line and a `failAfterFrames` switch) and `FailoverAdapter`
+  (primary → fallback, transparent mid-stream). `createSttAdapter('mock')` added.
+- **Gateway (`services/gateway`):**
+  - `GET /v1/live` WebSocket: one session per meeting, a vendor stream per track
+    (mic → `me`, meeting → stable `S1,S2…`), Opus decode via **opusscript** (pure-JS,
+    no native build), per-track seq dedup + a few-minute in-memory **resume** window,
+    automatic **vendor failover**, and a `toTaiwanTraditional` guard so no Simplified
+    character can ever reach a client.
+  - **Accounts/usage:** Drizzle ORM, only `users` + `usage` tables; PostgreSQL in
+    prod (`DATABASE_URL`), **PGlite** in tests. Monthly minute **quota** enforced on
+    `start`; usage written on `stop`.
+  - **Auth:** OAuth 2 + PKCE (Google, Microsoft) loopback flow; stateless JWT access
+    - refresh tokens (no token table); dev bypass token gated to development.
+  - **Ops:** keys from env only; request logging disabled and `Authorization`
+    redacted (no content in logs); OpenTelemetry metrics (segment latency, vendor
+    errors, active meetings) exporting only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set;
+    `Dockerfile` + `/health`. `POST /v1/batch` final pass (temp file deleted
+    immediately).
+- **`tools/replay`:** `pnpm replay --wav meeting.wav --mic mic.wav` streams two WAVs
+  at real time through a fake client (raw PCM, no ffmpeg) and prints the live
+  transcript.
+- **Tests:** reconnect/resume loses no words, vendor failover, quota exceeded,
+  invalid token, Traditional-only guard, a privacy check (no transcript text in logs
+  or DB; only `users`/`usage` tables), a 50-meeting load test, and auth/token units.
+- **ADR:** `docs/decisions/0005-gateway-live-transcription.md` (accepted; the
+  Soniox-live / AssemblyAI-fallback default is **provisional** until ADR 0002's
+  benchmark runs — then update `STT_LIVE_VENDOR` / `STT_FALLBACK_VENDOR`).
+
+**Next (needs you):** provision vendor keys + a real Postgres (`docker compose up`,
+`pnpm --filter @hearme/gateway db:migrate`), set the OAuth client credentials, and
+replay a real mixed zh-TW/English recording against a live vendor to confirm the
+under-2 s (p95) latency and Traditional-only output on real audio.
+
 ## 2026-11-01 — Prompt 3: Windows capture helper (`tapcapture.exe`)
 
 Built the Windows audio capture sidecar in `native/windows-capture` (Rust, `windows`

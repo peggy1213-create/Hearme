@@ -44,6 +44,12 @@ export const PRICING: Record<SttVendor, VendorPricing> = {
     batchUsdPerHour: 0,
     source: 'local (faster-whisper); compute cost only',
   },
+  mock: {
+    // The deterministic test vendor; never benchmarked, no real cost.
+    liveUsdPerHour: 0,
+    batchUsdPerHour: 0,
+    source: 'mock (test vendor)',
+  },
 };
 
 /** Estimated USD for `audioSeconds` of audio at a per-hour rate. */
