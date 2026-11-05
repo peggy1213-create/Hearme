@@ -7,6 +7,7 @@ describe('createSttAdapter', () => {
     expect(createSttAdapter('assemblyai').name).toBe('assemblyai');
     expect(createSttAdapter('deepgram').name).toBe('deepgram');
     expect(createSttAdapter('whisper').name).toBe('whisper');
+    expect(createSttAdapter('mock').name).toBe('mock');
   });
 
   it('lists every vendor in STT_VENDORS', () => {

@@ -11,11 +11,21 @@ import { LangSchema, TrackSchema, TranscriptSegmentSchema } from './segment.js';
  * `ended`. The gateway stores nothing; see PROTOCOL.md.
  */
 
-export const PROTOCOL_VERSION = 1 as const;
+export const PROTOCOL_VERSION = 2 as const;
+
+/**
+ * Audio codec of the `audio` frames.
+ * - `opus`: Opus-encoded (the production path); the gateway decodes to PCM before
+ *   relaying to the STT vendor.
+ * - `pcm`: raw little-endian 16-bit mono PCM at `sampleRate`, relayed as-is. Used
+ *   by the replay tool and tests so they need no Opus encoder.
+ */
+export const CodecSchema = z.enum(['opus', 'pcm']);
+export type Codec = z.infer<typeof CodecSchema>;
 
 // --- client -> server ---
 
-/** Opens a session. Sent once, first. */
+/** Opens a session. Sent once, first. On reconnect, sent again with the same `meetingId`. */
 export const ClientStartSchema = z.object({
   type: z.literal('start'),
   protocolVersion: z.literal(PROTOCOL_VERSION),
@@ -25,8 +35,10 @@ export const ClientStartSchema = z.object({
   languages: z.array(LangSchema).default(['en', 'zh-TW']),
   /** PCM sample rate of the decoded audio the gateway should expect, in Hz. */
   sampleRate: z.number().int().positive(),
-  /** Opus-encoded audio, decoded gateway-side before relaying. */
-  codec: z.literal('opus').default('opus'),
+  /** Audio codec of the frames that follow. */
+  codec: CodecSchema.default('opus'),
+  /** Custom vocabulary (names, products, jargon) passed to the vendor when supported. */
+  vocabulary: z.array(z.string()).optional(),
 });
 export type ClientStart = z.infer<typeof ClientStartSchema>;
 
@@ -69,6 +81,19 @@ export const ServerSegmentSchema = z.object({
 });
 export type ServerSegment = z.infer<typeof ServerSegmentSchema>;
 
+/**
+ * Acknowledges how far the gateway has consumed a track. Sent right after `start`
+ * (including on reconnect) and as frames are consumed, so a client that reconnects
+ * knows to resend from `lastSeq + 1`. `lastSeq` is `-1` when no frame has been
+ * received for the track yet.
+ */
+export const ServerAckSchema = z.object({
+  type: z.literal('ack'),
+  track: TrackSchema,
+  lastSeq: z.number().int().min(-1),
+});
+export type ServerAck = z.infer<typeof ServerAckSchema>;
+
 /** Error codes the gateway may return. */
 export const ServerErrorCodeSchema = z.enum([
   'bad_request',
@@ -100,6 +125,7 @@ export type ServerEnded = z.infer<typeof ServerEndedSchema>;
 
 export const ServerMessageSchema = z.discriminatedUnion('type', [
   ServerSegmentSchema,
+  ServerAckSchema,
   ServerErrorSchema,
   ServerEndedSchema,
 ]);

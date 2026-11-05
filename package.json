@@ -17,7 +17,8 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "benchmark": "pnpm --filter @hearme/benchmark start --"
+    "benchmark": "pnpm --filter @hearme/benchmark start --",
+    "replay": "pnpm --filter @hearme/replay start --"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

@@ -67,12 +67,20 @@ describe('gateway protocol', () => {
       meetingId: 'm-1',
       platform: 'meet',
       sampleRate: 48000,
+      vocabulary: ['Hearme', 'OpenCC'],
     });
     expect(msg.type).toBe('start');
     if (msg.type === 'start') {
       expect(msg.languages).toEqual(['en', 'zh-TW']);
       expect(msg.codec).toBe('opus');
+      expect(msg.vocabulary).toEqual(['Hearme', 'OpenCC']);
     }
+  });
+
+  it('parses a server ack message', () => {
+    const msg = ServerMessageSchema.parse({ type: 'ack', track: 'mic', lastSeq: -1 });
+    expect(msg.type).toBe('ack');
+    if (msg.type === 'ack') expect(msg.lastSeq).toBe(-1);
   });
 
   it('parses a server ended message', () => {

@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/target
+**/coverage
+**/*.log
+.git
+.env

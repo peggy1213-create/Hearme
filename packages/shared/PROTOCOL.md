@@ -1,6 +1,10 @@
 # Gateway WebSocket protocol
 
-Version `1` (`PROTOCOL_VERSION` in `src/protocol.ts`).
+Version `2` (`PROTOCOL_VERSION` in `src/protocol.ts`).
+
+> **v2 changes:** `start` gained `vocabulary`; `codec` now accepts `pcm` as well as
+> `opus`; a new `ack` server message reports how far each track has been consumed,
+> which is what reconnecting clients use to resume (see **Resume** below).
 
 The desktop app opens **one WebSocket per meeting** to the Hearme gateway. The
 gateway relays audio to the speech-to-text (STT) vendor and streams transcript
@@ -15,6 +19,8 @@ The canonical message shapes are the zod schemas in
 ```
 client                          gateway
   │ ── start ──────────────────▶ │  open STT stream
+  │ ◀── ack (mic, lastSeq -1) ── │  resume point per track
+  │ ◀── ack (meeting, -1) ────── │
   │ ── audio (mic, seq 0) ─────▶ │  relay
   │ ── audio (meeting, seq 0) ─▶ │  relay
   │ ◀──────────────── segment ── │  live transcript, under ~2 s
@@ -27,21 +33,31 @@ client                          gateway
 An `error` may arrive at any time. If `fatal` is true the session is over and the
 socket closes.
 
+## Resume
+
+If the socket drops, the client reconnects and sends `start` again with the **same
+`meetingId`**. The gateway keeps a short in-memory resume window per meeting (a few
+minutes), so it recognises the meeting, replies with an `ack` per track giving the
+last sequence number it has, and the client resends from `lastSeq + 1`. The gateway
+ignores any `audio` frame whose `seq` it has already seen, so no audio is lost or
+duplicated. Nothing is persisted; if the window has expired the meeting starts fresh.
+
 ## Client → server
 
 ### `start`
 
 Sent once, first.
 
-| Field             | Type                                      | Notes                                     |
-| ----------------- | ----------------------------------------- | ----------------------------------------- |
-| `type`            | `"start"`                                 |                                           |
-| `protocolVersion` | `1`                                       | Must match the gateway's.                 |
-| `meetingId`       | string                                    |                                           |
-| `platform`        | `zoom \| meet \| teams \| webex \| other` |                                           |
-| `languages`       | `("en" \| "zh-TW" \| "mixed")[]`          | Bias hint; defaults to `["en", "zh-TW"]`. |
-| `sampleRate`      | int (Hz)                                  | Sample rate of the decoded audio.         |
-| `codec`           | `"opus"`                                  | Audio is Opus-encoded.                    |
+| Field             | Type                                      | Notes                                                            |
+| ----------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| `type`            | `"start"`                                 |                                                                  |
+| `protocolVersion` | `1`                                       | Must match the gateway's.                                        |
+| `meetingId`       | string                                    |                                                                  |
+| `platform`        | `zoom \| meet \| teams \| webex \| other` |                                                                  |
+| `languages`       | `("en" \| "zh-TW" \| "mixed")[]`          | Bias hint; defaults to `["en", "zh-TW"]`.                        |
+| `sampleRate`      | int (Hz)                                  | Sample rate of the decoded audio.                                |
+| `codec`           | `"opus" \| "pcm"`                         | `opus` (default, decoded gateway-side) or raw 16-bit mono `pcm`. |
+| `vocabulary`      | string[]                                  | Optional custom terms passed to the vendor.                      |
 
 ### `audio`
 
@@ -72,6 +88,17 @@ Ends the session; the gateway flushes the STT stream and replies with `ended`.
 A live-pass transcript segment (`pass: "live"`). The payload is a
 `TranscriptSegment` (see [`src/segment.ts`](src/segment.ts)). Chinese text is already
 Traditional (Taiwan); run any vendor output through `packages/zhtw` before emitting.
+
+### `ack`
+
+Reports how far a track has been consumed, for resume. Sent after `start` and as
+frames are relayed.
+
+| Field     | Type             | Notes                                                |
+| --------- | ---------------- | ---------------------------------------------------- |
+| `type`    | `"ack"`          |                                                      |
+| `track`   | `mic \| meeting` |                                                      |
+| `lastSeq` | int (≥ -1)       | Highest contiguous `seq` consumed; `-1` if none yet. |
 
 ### `error`
 

@@ -1,19 +1,25 @@
 export * from './adapter.js';
+export { FailoverAdapter } from './failover.js';
 export { SonioxAdapter } from './vendors/soniox.js';
 export { AssemblyAIAdapter } from './vendors/assemblyai.js';
 export { DeepgramAdapter } from './vendors/deepgram.js';
 export { WhisperAdapter } from './vendors/whisper.js';
+export { MockAdapter, type MockAdapterConfig } from './vendors/mock.js';
 
 import type { SttAdapter } from './adapter.js';
 import { AssemblyAIAdapter } from './vendors/assemblyai.js';
 import { DeepgramAdapter } from './vendors/deepgram.js';
 import { SonioxAdapter } from './vendors/soniox.js';
 import { WhisperAdapter } from './vendors/whisper.js';
+import { MockAdapter } from './vendors/mock.js';
 
-/** Known vendor ids. `whisper` is the local (on-device) baseline. */
-export type SttVendor = 'soniox' | 'assemblyai' | 'deepgram' | 'whisper';
+/**
+ * Known vendor ids. `whisper` is the local (on-device) baseline; `mock` is the
+ * deterministic test adapter and is never a production default.
+ */
+export type SttVendor = 'soniox' | 'assemblyai' | 'deepgram' | 'whisper' | 'mock';
 
-/** Every vendor id, in the order the benchmark reports them. */
+/** The cloud/local vendors the benchmark reports, in order. Excludes `mock`. */
 export const STT_VENDORS: readonly SttVendor[] = ['soniox', 'assemblyai', 'deepgram', 'whisper'];
 
 /** Per-vendor construction config. Cloud vendors read their key from `.env` when omitted. */
@@ -36,5 +42,7 @@ export function createSttAdapter(vendor: SttVendor, config: SttAdapterConfig = {
       return new DeepgramAdapter(config);
     case 'whisper':
       return new WhisperAdapter(config);
+    case 'mock':
+      return new MockAdapter();
   }
 }
