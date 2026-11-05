@@ -104,6 +104,13 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      # audiopus_sys links the system Opus via pkg-config on Unix and only falls
+      # back to building libopus from source (autotools) when it is missing. The
+      # Windows path uses a prebuilt lib, so only macOS needs this.
+      - name: Install Opus (macOS)
+        if: runner.os == 'macOS'
+        run: brew install opus pkg-config
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
