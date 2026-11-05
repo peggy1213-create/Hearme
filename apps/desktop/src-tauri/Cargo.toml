@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Hearme desktop app"
 authors = ["Hearme"]
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.91"
 
 # The library the mobile entry point and the binary both call into.
 [lib]
@@ -18,7 +18,59 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+thiserror = "1"
+anyhow = "1"
+tracing = "0.1"
+byteorder = "1"
+base64 = "0.22"
+
+# Async runtime, gateway WebSocket client and process management for the sidecar.
+tokio = { version = "1", features = [
+  "rt-multi-thread",
+  "macros",
+  "sync",
+  "time",
+  "io-util",
+  "process",
+  "net",
+  "fs",
+] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-native-roots"] }
+futures-util = "0.3"
+
+# Audio: resampling, Opus encode, Ogg container.
+rubato = "0.15"
+audiopus = "0.2"
+ogg = "0.9"
+
+# Timestamps (ISO-8601, meeting-folder names) and free-disk-space check.
+time = { version = "0.3", features = ["formatting", "parsing", "macros", "local-offset"] }
+fs4 = "0.12"
+
+# Auth tokens in the OS keychain (macOS Keychain, Windows Credential Manager).
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
+
+# Echo cancellation / noise suppression. Pure-Rust WebRTC audio processing (AEC3 +
+# noise suppression + AGC2), no C++ toolchain. Default backend; `NlmsAec` is the
+# dependency-free fallback and the deterministic backend the echo test uses.
+[dependencies.sonora]
+git = "https://github.com/dignifiedquire/sonora"
+optional = true
+
+# Silero VAD via ONNX Runtime. Opt-in: `ort` pulls a native onnxruntime (and
+# openssl-sys on Windows), so it is not built by default; the energy VAD is the
+# default and is what tests use.
+[dependencies.ort]
+version = "2.0.0-rc.15"
+optional = true
 
 [features]
+# Production desktop build uses the sonora AEC backend.
+default = ["sonora-aec"]
+sonora-aec = ["dep:sonora"]
+silero-vad = ["dep:ort"]
 # Enabled when building bundled production apps.
 custom-protocol = ["tauri/custom-protocol"]
+
+[dev-dependencies]
+tempfile = "3"

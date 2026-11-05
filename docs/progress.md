@@ -3,6 +3,62 @@
 A short log of what each working session changed. Newest first. Keep this updated at
 the end of each session (see CLAUDE.md).
 
+## 2026-11-05 — Prompt 5: desktop core (echo cancellation, recording, streaming)
+
+Built the Rust core of the Tauri app (`apps/desktop/src-tauri`) that turns the
+capture helper's raw frames into a recording on disk plus a live Opus stream to the
+gateway. No UI yet (Prompt 6). Verified on this Windows machine: `cargo check`,
+`cargo test` (**50 tests, all green**), `cargo fmt` and `cargo clippy` clean; the
+shared package still typechecks + tests after the schema addition. The macOS build
+and real-call acceptance (and the Windows real-call) remain hardware follow-ups, as
+with Prompts 2–4.
+
+- **Crates (all verified to build here first):** `sonora` (pure-Rust WebRTC
+  AEC3 + noise suppression — no C++ toolchain) for echo cancellation; `rubato` for
+  resampling; `audiopus` (libopus) + `ogg` for Opus/Ogg; `tokio-tungstenite` for the
+  gateway WebSocket; `keyring` for the OS keychain; `time`, `fs4`. `ort`/Silero is
+  kept behind the opt-in `silero-vad` feature (onnxruntime + openssl-sys on Windows).
+  Rationale in **ADR 0006**.
+- **Sidecar (`sidecar.rs`):** supervises `tapcapture` as a child process, parses its
+  length-prefixed binary frames, forwards events, logs its stderr (diagnostics only),
+  and **restarts it on crash**, re-issuing the active `start`. Binary resolved from
+  `HEARME_HELPER_PATH` or next to the app exe (bundling it as a Tauri `externalBin`
+  sidecar is a CI packaging step once the per-OS binaries exist).
+- **Pipeline (`audio/`):** aligns mic + meeting by the shared host clock; `AecProcessor`
+  trait with **sonora** (default), a dependency-free **NLMS** canceller (fallback +
+  the deterministic echo-test backend) and a passthrough for `set_echo_cancellation`;
+  `Vad` trait with an energy gate (default) and Silero (opt-in); `rubato` resample to
+  48 kHz (record) and 16 kHz (stream); voiced-only 20 ms streaming frames with
+  per-track seq.
+- **Recording (`recording/`):** `mic.ogg` / `meeting.ogg` / `mixed.ogg` (mono 48 kHz
+  Opus) + `meeting.json`, flushed **every 10 s**; free-disk warning below 1 GB;
+  records silence too; **crash recovery** truncates each Ogg to its last complete page
+  and marks the meeting `recovered`.
+- **Gateway client (`gateway/`):** one WebSocket per meeting (protocol v2), Opus 16 kHz
+  20 ms frames, **on-disk outbox** of unacked frames with resume from `lastSeq + 1`,
+  reconnect with backoff, **30-min offline cutoff**, auth token from the keychain as a
+  Bearer header (never the URL).
+- **API (`app.rs`, `events.rs`):** Tauri commands `list_sources`, `start_meeting`,
+  `stop_meeting`, `set_echo_cancellation`, `open_recording_folder`; events
+  `sources`, `source_started/stopped`, `levels` (~10/s), `segment`,
+  `connection_status`, `recording_status`, `warning` (permission / disk_space /
+  no_audio / helper_crashed). `TranscriptionEngine` trait abstracts the cloud
+  `GatewayEngine` so an on-device whisper.cpp engine can be added later (not built).
+- **Shared schema:** added optional `meeting.recovered` to `packages/shared`
+  (`meeting.ts`) + MEETING_FOLDER.md — additive, folder version unchanged.
+- **Tests:** frame codec round-trip + streaming reassembly; clock alignment; resampler
+  (incl. small-push == big-push); **NLMS reduces a −12 dB echo by >10 dB**; energy VAD;
+  Ogg/Opus write + **crash repair**; recorder 3-file + mix; **recovery marks
+  recovered**; meeting.json matches the shared shape; outbox resume/ack/torn-record;
+  gateway message (de)serialization + seq/resume; engine Opus encode; driver
+  feed/segment/finalize.
+
+**Next (needs hardware):** build + run on a Mac and in a real Zoom/Meet call to
+produce a playable `mixed.ogg` and a live transcript through the gateway; pull the
+network for 2 min and confirm no recording/text is lost after reconnect; repeat on
+Windows with the real helper; wire `externalBin` sidecar bundling in CI; optionally
+provision onnxruntime + the Silero model to turn on `silero-vad`.
+
 ## 2026-11-03 — Prompt 4: streaming gateway + live transcription
 
 Built the gateway that turns two audio tracks per meeting into live, labelled,
