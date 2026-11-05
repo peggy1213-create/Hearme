@@ -34,7 +34,9 @@ export function registerLiveRoute(
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
     };
     // Close only after the queued frame has been written, so the client receives it.
-    const closeWhenFlushed = (): void => setImmediate(() => socket.close());
+    const closeWhenFlushed = (): void => {
+      setImmediate(() => socket.close());
+    };
     const fail = (code: ServerErrorCode, message: string, fatal = true): void => {
       if (socket.readyState !== WebSocket.OPEN) return;
       socket.send(JSON.stringify({ type: 'error', code, message, fatal }), () => {
