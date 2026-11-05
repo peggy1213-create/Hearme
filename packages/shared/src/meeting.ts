@@ -39,5 +39,12 @@ export const MeetingSchema = z.object({
   folderPath: z.string(),
   status: MeetingStatusSchema,
   driveSync: DriveSyncSchema.optional(),
+  /**
+   * Set by the desktop app when a previous run died mid-recording and this
+   * meeting's files were repaired on the next launch (see Prompt 5 / the desktop
+   * core). Additive and optional, so the meeting-folder version is unchanged and
+   * older readers simply ignore it.
+   */
+  recovered: z.boolean().optional(),
 });
 export type Meeting = z.infer<typeof MeetingSchema>;

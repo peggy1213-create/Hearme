@@ -58,6 +58,11 @@ Metadata and the live segments captured during the call.
 }
 ```
 
+The optional `meeting.recovered` boolean is set to `true` by the desktop app when a
+previous run died mid-recording and this meeting's audio files were repaired on the
+next launch. It is additive and optional, so the folder version is unchanged and
+older readers ignore it.
+
 ### `transcript.json` — `TranscriptFile`
 
 The cleaned final-pass transcript (`pass: "final"` segments). `transcript.md` is the
